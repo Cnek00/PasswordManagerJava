@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Kullanıcı Yönetim Paneli</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen p-8">
+
+    <div class="max-w-6xl mx-auto">
+        <!-- Üst Başlık ve Yeni Ekleme Butonu -->
+        <div class="flex justify-between items-center mb-8 border-b border-slate-700 pb-5">
+            <div>
+                <h1 class="text-3xl font-bold text-white tracking-tight">Kullanıcı Yönetim Paneli</h1>
+                <p class="text-slate-400 text-sm mt-1">Sistemde kayıtlı olan tüm kullanıcıları buradan yönetebilirsiniz.</p>
+            </div>
+            <a th:href="@{/users/new}" 
+               class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 transition-colors rounded-lg font-semibold shadow-lg flex items-center gap-2">
+                <span class="text-xl leading-none">+</span> Yeni Kullanıcı Ekle
+            </a>
+        </div>
+
+        <!-- Tablo Container -->
+        <div class="bg-slate-800 rounded-2xl shadow-xl border border-slate-700 overflow-hidden">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-slate-700/50 text-slate-300 text-sm uppercase tracking-wider border-b border-slate-700">
+                        <th class="py-4 px-6">ID</th>
+                        <th class="py-4 px-6">Kullanıcı Adı</th>
+                        <th class="py-4 px-6">E-posta</th>
+                        <th class="py-4 px-6">Sınıf (Rank)</th>
+                        <th class="py-4 px-6 text-center">Durum</th>
+                        <th class="py-4 px-6 text-center">İşlemler</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-700">
+                    <!-- Boş liste senaryosu (Kolon sayısı 6'ya çıktığı için colspan="6" yapıldı) -->
+                    <tr th:if="${#lists.isEmpty(users)}">
+                        <td colspan="6" class="py-8 text-center text-slate-400">
+                            Henüz kayıtlı kullanıcı bulunamadı. Hemen bir tane ekleyin!
+                        </td>
+                    </tr>
+                    
+                    <!-- Dinamik liste dönme -->
+                    <tr th:each="u : ${users}" class="hover:bg-slate-700/30 transition-colors">
+                        <td class="py-4 px-6 text-slate-400" th:text="${u.id}">1</td>
+                        <td class="py-4 px-6 font-medium text-white" th:text="${u.username}">admin</td>
+                        <td class="py-4 px-6 text-slate-300" th:text="${u.email}">admin@mail.com</td>
+                        
+                        <!-- YENİ: Sınıf / Rütbe (Rank) Gösterimi -->
+                        <td class="py-4 px-6">
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold border"
+                                  th:classappend="${u.rank.level >= 80} ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-400' : 
+                                                  (${u.rank.level >= 50} ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' : 'bg-slate-700/50 border-slate-600 text-slate-300')"
+                                  th:text="${u.rank.name + ' (Lvl ' + u.rank.level + ')'}">
+                                SUPER_ADMIN (Lvl 100)
+                            </span>
+                        </td>
+
+                        <!-- Durum Rozeti -->
+                        <td class="py-4 px-6 text-center">
+                            <span th:if="${u.enabled}" class="px-3 py-1 text-xs font-semibold rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                                Aktif
+                            </span>
+                            <span th:unless="${u.enabled}" class="px-3 py-1 text-xs font-semibold rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/20">
+                                Pasif
+                            </span>
+                        </td>
+                        
+                        <!-- Butonlar -->
+                        <td class="py-4 px-6 text-center space-x-2">
+                            <!-- YENİ: Yetkileri Yönet Butonu -->
+                            <a th:href="@{/users/{id}/permissions(id=${u.id})}" 
+                               class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-blue-600/20 text-blue-400 border border-transparent hover:bg-blue-600/30 transition-colors">
+                                🔑 Yetki Yönetimi
+                            </a>
+
+                            <!-- Orijinal Aktif/Pasif Yapma (Dinamik class ve text yapısı korundu) -->
+                            <a th:href="@{/users/toggle/{id}(id=${u.id})}" 
+                               th:classappend="${u.enabled} ? 'bg-amber-600/20 text-amber-400 hover:bg-amber-600/30' : 'bg-emerald-600/20 text-emerald-400 hover:bg-emerald-600/30'"
+                               class="px-3 py-1.5 text-xs font-medium rounded-lg border border-transparent transition-colors">
+                                <span th:text="${u.enabled} ? 'Engelle' : 'Aktif Et'">Engelle</span>
+                            </a>
+
+                            <!-- Orijinal Silme (Onclick korundu) -->
+                            <a th:href="@{/users/delete/{id}(id=${u.id})}" 
+                               onclick="return confirm('Bu kullanıcıyı tamamen silmek istediğinize emin misiniz?')"
+                               class="px-3 py-1.5 text-xs font-medium rounded-lg bg-rose-600/20 text-rose-400 border border-transparent hover:bg-rose-600/30 transition-colors">
+                                Sil
+                            </a>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</body>
+</html>

@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Yetki & Sınıf Yönetimi</title>
+    <!-- Modern ve hızlı tasarım için Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-gray-100 min-h-screen font-sans">
+
+    <div class="container mx-auto px-4 py-8 max-w-5xl">
+        
+        <!-- Üst Menü / Geri Dönüş -->
+        <div class="flex justify-between items-center mb-8 border-b border-gray-800 pb-4">
+            <div>
+                <h1 class="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400">
+                    Yetki ve Sınıf Yönetimi
+                </h1>
+                <p class="text-gray-400 text-sm mt-1">
+                    Kullanıcı: <span class="text-white font-semibold" th:text="${user.username}">admin</span> 
+                    (<span class="text-gray-300" th:text="${user.email}">admin@sirket.com</span>)
+                </p>
+            </div>
+            <a href="/users" class="bg-gray-800 hover:bg-gray-700 text-gray-200 px-4 py-2 rounded-lg text-sm font-medium transition duration-200">
+                ← Kullanıcı Listesine Dön
+            </a>
+        </div>
+
+        <!-- Bildirim Mesajları -->
+        <div th:if="${param.successRank}" class="mb-6 p-4 bg-emerald-950 border border-emerald-500/30 text-emerald-400 rounded-lg text-sm">
+            🎉 Kullanıcının hiyerarşik sınıfı (Rank) başarıyla güncellendi!
+        </div>
+        <div th:if="${param.successPermission}" class="mb-6 p-4 bg-emerald-950 border border-emerald-500/30 text-emerald-400 rounded-lg text-sm">
+            🔑 Yeni dinamik yetki başarıyla tanımlandı!
+        </div>
+        <div th:if="${param.successRevoke}" class="mb-6 p-4 bg-rose-950 border border-rose-500/30 text-rose-400 rounded-lg text-sm">
+            🚫 Atanan özel yetki başarıyla geri çekildi!
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            
+            <!-- SOL KOLON: Sınıf (Rank) Güncelleme Formu -->
+            <div class="bg-gray-800/50 border border-gray-800 p-6 rounded-xl shadow-lg h-fit">
+                <h3 class="text-lg font-bold text-blue-400 mb-4 border-b border-gray-800 pb-2">
+                    🛡️ Sınıf (Rank) Güncelle
+                </h3>
+                <form th:action="@{/users/{id}/update-rank(id=${user.id})}" method="post" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+                            Mevcut Seviye: 
+                            <span class="text-emerald-400 normal-case" th:text="${user.rank.name + ' (Lvl ' + user.rank.level + ')'}">SUPER_ADMIN</span>
+                        </label>
+                        <select name="rankId" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-blue-500">
+                            <option th:each="r : ${allRanks}" 
+                                    th:value="${r.id}" 
+                                    th:text="${r.name + ' (Lvl ' + r.level + ')'}"
+                                    th:selected="${r.id == user.rank.id}">
+                            </option>
+                        </select>
+                    </div>
+                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-medium text-sm py-2 px-4 rounded-lg transition duration-200 shadow-md shadow-blue-900/20">
+                        Sınıfı Güncelle
+                    </button>
+                </form>
+            </div>
+
+            <!-- ORTA KOLON: Dinamik Yetki Ekleme Formu -->
+            <div class="bg-gray-800/50 border border-gray-800 p-6 rounded-xl shadow-lg h-fit">
+                <h3 class="text-lg font-bold text-emerald-400 mb-4 border-b border-gray-800 pb-2">
+                    🔑 Yeni Yetki Tanımla
+                </h3>
+                <form th:action="@{/users/{id}/grant-permission(id=${user.id})}" method="post" class="space-y-4">
+                    <!-- Gizli alan: Yetkiyi şu an kim veriyor? (Simüle etmek için seeder'daki admin id'si olan 1'i verelim şimdilik) -->
+                    <input type="hidden" name="grantedById" value="1">
+                    
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Eylem (Permission)</label>
+                        <select name="permissionId" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-emerald-500">
+                            <option th:each="p : ${allPermissions}" 
+                                    th:value="${p.id}" 
+                                    th:text="${p.action + (p.isDelegatable ? ' (Devredilebilir)' : ' (Kilitli)')}">
+                            </option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Etki Alanı (Scope)</label>
+                        <select name="scopeId" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-emerald-500">
+                            <option th:each="s : ${allScopes}" 
+                                    th:value="${s.id}" 
+                                    th:text="${s.scopeKey + ' - ' + s.description}">
+                            </option>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-sm py-2 px-4 rounded-lg transition duration-200 shadow-md shadow-emerald-900/20">
+                        Yetkiyi Tanımla
+                    </button>
+                </form>
+            </div>
+
+            <!-- SAĞ KOLON: Mevcut Atanmış Dinamik Yetkilerin Listesi -->
+            <div class="bg-gray-800/50 border border-gray-800 p-6 rounded-xl shadow-lg h-fit md:col-span-1">
+                <h3 class="text-lg font-bold text-rose-400 mb-4 border-b border-gray-800 pb-2">
+                    📋 Atanmış Özel Yetkiler
+                </h3>
+                
+                <div th:if="${#lists.isEmpty(userPermissions)}" class="text-center py-6 text-gray-500 text-sm">
+                    Bu kullanıcıya atanmış özel bir yetki bulunmuyor. (Sadece rütbe yetkileri geçerli)
+                </div>
+
+                <div th:if="${!#lists.isEmpty(userPermissions)}" class="space-y-3">
+                    <div th:each="up : ${userPermissions}" class="bg-gray-900/80 border border-gray-800 p-3 rounded-lg flex justify-between items-center">
+                        <div>
+                            <div class="flex items-center space-x-2">
+                                <span class="text-xs font-bold bg-gray-800 text-emerald-400 px-2 py-0.5 rounded border border-emerald-500/20" th:text="${up.permission.action}">READ</span>
+                                <span class="text-xs font-bold bg-gray-800 text-blue-400 px-2 py-0.5 rounded border border-blue-500/20" th:text="${up.scope.scopeKey}">SYSTEM</span>
+                            </div>
+                            <p class="text-[10px] text-gray-500 mt-1" th:if="${up.grantedBy != null}">
+                                Veren: <span th:text="${up.grantedBy.username}">admin</span>
+                            </p>
+                        </div>
+                        
+                        <!-- Yetkiyi Geri Al Butonu -->
+                        <form th:action="@{/users/{userId}/revoke-permission/{upId}(userId=${user.id}, upId=${up.id})}" method="post">
+                            <button type="submit" class="text-gray-400 hover:text-rose-400 p-1 rounded transition duration-150" title="Yetkiyi Geri Al">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                </svg>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+</body>
+</html>
